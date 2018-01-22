@@ -1,0 +1,16 @@
+.canvasOuter {
+	position:relative;
+	max-width:900px;
+	min-height:280px;
+	margin:20px auto;
+}
+#bgrdCanvas,
+#iaCanvas {
+	position:absolute;
+}
+#bgrdCanvas {
+	z-index:1;
+}
+#iaCanvas {
+	z-index:2;
+}
