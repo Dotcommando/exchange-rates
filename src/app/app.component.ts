@@ -113,6 +113,8 @@ console.timeEnd('timeOfOnInit');
 			pointsObj.cacheDay[year][month][day] = dayKey;
 
 		}
+
+		this.dateArray = pointsObj;
 		//console.log((7.364+6.011+7.903+6.979+7.708+7.090+8.662+7.349+8.911+7.965)/10);
 		//console.log((5.307+5.798+6.188+5.731+5.340+5.505+6.688+6.029+6.143+11.711)/10);
 /*
@@ -132,8 +134,8 @@ console.timeEnd('timeOfOnInit');
 	organizeArray():void {
 
 		let points: Year[];
-		let that: DatePoints;
-
+		let that: DatePoints = this.dateArray;
+/*
 		points = [{ // массив содержит объекты лет
 			value: 2018,
 			items: [{ // массив содержит объекты месяцев
@@ -377,7 +379,7 @@ console.timeEnd('timeOfOnInit');
 		}];
 
 		that = new DatePoints(points);
-
+*/
 		that.sortYears(that);
 		that.items.forEach(function(monthOfYear){
 			that.sortMonthes(monthOfYear);
@@ -386,28 +388,7 @@ console.timeEnd('timeOfOnInit');
 			});
 		});
 
-		//console.log(that.isYear(2016));
-		//console.log(that.isYear(2017));
-		//console.log(that.isYear(2018));
-		//console.log(that.isYear(2019));
-		//console.log("=--------------------=");
-		//console.log(that.isMonth(2017,1));
-		//console.log(that.isMonth(2017,2));
-		//console.log(that.isMonth(2017,3));
-		//console.log(that.isMonth(2017,4));
-		//console.log(that.isMonth(2017,5));
-		//console.log(that.isMonth(2017,6));
-		//console.log(that.isMonth(2017,7));
-		//console.log("=--------------------=");
-		//console.log(that.isDay(2017,2,1));
-		//console.log(that.isDay(2017,4,3));
-		//console.log(that.isDay(2017,5,8));
-		//console.log(that.isDay(2017,6,2));
-		//console.log(that.isDay(2018,1,8));
-		//console.log(that.isDay(2018,1,9));
-
 		this.dateArray = that;
-		//console.log(this.dateArray);
 
 	}
 }
