@@ -25,9 +25,10 @@ export class AppComponent implements OnInit {
 
 	ngOnInit() {
 console.time('timeOfOnInit');
-		this.getRates();
-		this.parseDataArray();
-		this.organizeArray();
+		this.getRates(); 		// получаем массив котировок в this.rates
+		this.parseDataArray();	// перебиваем значения в объект this.dateArray
+		this.organizeArray();	// сортируем, чтобы даты в массивах this.dateArray шли по порядку друг за другом
+		this.setDiffs();		// высчитываем diffы между каждой парой точек в this.dateArray
 console.timeEnd('timeOfOnInit');
 	}
 	getRates():void {
@@ -103,9 +104,8 @@ console.timeEnd('timeOfOnInit');
 
 			if (pointsObj.cacheMonth[year] == undefined) pointsObj.cacheMonth[year] = [];
 			pointsObj.cacheMonth[year][month] = monthKey;
-			
 
-			pointsObj.items[yearKey].items[monthKey].items.push({value: day, X: null, Y: null, cost: dataSource[i].value, diff:null});
+			pointsObj.items[yearKey].items[monthKey].items.push({value: day, X: null, Y: null, cost: (Math.round(dataSource[i].value * 100) / 100 ), diff:null});
 
 			dayKey = pointsObj.isDay(year, month, day)[2];
 			if (pointsObj.cacheDay[year] == undefined) pointsObj.cacheDay[year] = [];
@@ -133,253 +133,8 @@ console.timeEnd('timeOfOnInit');
 	}
 	organizeArray():void {
 
-		let points: Year[];
 		let that: DatePoints = this.dateArray;
-/*
-		points = [{ // массив содержит объекты лет
-			value: 2018,
-			items: [{ // массив содержит объекты месяцев
-				value: 3,
-				items: [{ // массив содержит объекты дней
-					value: 16,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 14,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 15,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 11,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 13,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 12,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				}]
-			},{
-				value: 1,
-				items: [{ // массив содержит объекты дней
-					value: 1,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 8,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 2,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 5,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 3,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 6,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				}]
-			}]
-		},{
-			value: 2017,
-			items: [{
-				value: 4,
-				items: [{
-					value: 16,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 14,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 15,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 11,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 13,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 12,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				}]
-			},{
-				value: 3,
-				items: [{ // массив содержит объекты дней
-					value: 1,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 8,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 2,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 5,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 3,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 6,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				}]
-			},{
-				value: 5,
-				items: [{ // массив содержит объекты дней
-					value: 1,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 8,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 2,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 5,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 3,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 6,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				}]
-			},{
-				value: 8,
-				items: [{ // массив содержит объекты дней
-					value: 1,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 8,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 2,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 5,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 3,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				},{
-					value: 6,
-					X: 456,
-					Y: 243,
-					cost: 65.4576,
-					diff: 0.7245
-				}]
-			}]
-		}];
 
-		that = new DatePoints(points);
-*/
 		that.sortYears(that);
 		that.items.forEach(function(monthOfYear){
 			that.sortMonthes(monthOfYear);
@@ -389,6 +144,60 @@ console.timeEnd('timeOfOnInit');
 		});
 
 		this.dateArray = that;
+
+	}
+	setDiffs():void {
+		
+		let that: DatePoints = this.dateArray;
+		let yearLen: number = that.items.length - 1;
+		let monthLen: number = 0;
+		let dayLen: number = 0;
+		let currentEl: Day = {};
+		let prevEl: Day = undefined;
+		let prevDayLen: number;
+		let prevMonthLen: number;
+		let prevYearLen: number;
+
+		if (yearLen < 0) return;
+
+		for (let i = yearLen; i >= 0; i--) {
+
+			monthLen = that.items[i].items.length - 1;
+			if (monthLen < 0) return;
+
+			for (let j = monthLen; j >= 0; j--) {
+
+				dayLen = that.items[i].items[j].items.length - 1;
+				if (dayLen < 0) return;
+
+				for (let k = dayLen; k >= 0; k--) {
+
+					currentEl = that.items[i].items[j].items[k];
+					if (k > 0) {
+						prevEl = that.items[i].items[j].items[k - 1];
+					} else {
+						if (j > 0) {
+							prevDayLen = that.items[i].items[j-1].items.length - 1;
+							prevEl = that.items[i].items[j-1].items[prevDayLen];
+						} else {
+							if (i > 0) {
+								prevMonthLen = that.items[i-1].items.length - 1;
+								prevDayLen = that.items[i-1].items[prevMonthLen].items.length - 1;
+								prevEl = that.items[i-1].items[prevMonthLen].items[prevDayLen];
+							}
+						}
+					}
+
+					that.calcDiff(currentEl, prevEl);
+					//console.log(`${that.items[i].items[j].items[k].value}.${that.items[i].items[j].value}.${that.items[i].value} цена ${that.items[i].items[j].items[k].cost}, разница ${that.items[i].items[j].items[k].diff}`);
+
+				}
+
+			}
+
+		}
+
+		console.log(this.dateArray);
 
 	}
 }

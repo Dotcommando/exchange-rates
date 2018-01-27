@@ -42,7 +42,7 @@ export class DatePoints {
 		this.cacheMonth = [];
 		this.cacheDay = [];
 	}
-	isYear(year: number):number { // возвращает false, если такого года нет, либо ключ массива, соответствующего позиции искомого года
+	isYear(year: number):number { // возвращает -1, если такого года нет, либо ключ массива, соответствующего позиции искомого года
 		if (this.cacheYear[year] != undefined) return this.cacheYear[year];
 		let len: number = this.items.length;
 		let result: number = -1;
@@ -56,7 +56,7 @@ export class DatePoints {
 		return result;
 
 	}
-	isMonth(year: number, month: number):number[] { // возвращает false, если такого месяца нет, либо ключ массива, соответствующего позиции искомого месяца
+	isMonth(year: number, month: number):number[] { // возвращает [-1, -1], если такого месяца нет, либо ключ массива, соответствующего позиции искомого месяца
 
 		let result: number[] = [-1, -1];
 		let yearKey: number = (this.cacheYear[year] != undefined)? this.cacheYear[year] : this.isYear(year);
@@ -85,7 +85,7 @@ export class DatePoints {
 		return result;
 
 	}
-	isDay(year: number, month: number, day:number):number[] {
+	isDay(year: number, month: number, day:number):number[] { // возвращает [-1, -1, -1], если такого дня нет, либо ключ массива, соответствующего позиции искомого дня
 
 		let result: number[] = [-1, -1, -1];
 		let yearKey: number = (this.cacheYear[year] != undefined)? this.cacheYear[year] : this.isYear(year);
@@ -101,10 +101,10 @@ export class DatePoints {
 			}
 		}
 
-		if ((this.items[yearKey].value == year) && (this.items[yearKey].items[monthKey].value === month)) {
+		if ((this.items[yearKey].value == year) && (this.items[yearKey].items[monthKey].value == month)) {
 			let daysLen = this.items[yearKey].items[monthKey].items.length;
 			for (let i = 0; i < daysLen; i++) {
-				if (this.items[yearKey].items[monthKey].items[i].value === day) {
+				if (this.items[yearKey].items[monthKey].items[i].value == day) {
 					result = [yearKey, monthKey, i];
 					if (this.cacheDay[year] == undefined) this.cacheDay[year] = [];
 					if (this.cacheDay[year][month] == undefined) this.cacheDay[year][month] = [];
@@ -144,5 +144,15 @@ export class DatePoints {
 		});
 		//console.log(daysOfMonth.items);
 		return daysOfMonth;
+	}
+	calcDiff(currEl: Day, prevEl: Day):void {
+
+		if ((prevEl == undefined) || (currEl.cost == undefined) || (prevEl.cost == undefined)) {
+			currEl.diff = 0;
+			return;
+		}
+
+		currEl.diff = Math.round((currEl.cost - prevEl.cost) * 100) / 100 );
+
 	}
 }
