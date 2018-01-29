@@ -29,6 +29,8 @@ console.time('timeOfOnInit');
 		this.parseDataArray();	// перебиваем значения в объект this.dateArray
 		this.organizeArray();	// сортируем, чтобы даты в массивах this.dateArray шли по порядку друг за другом
 		this.setDiffs();		// высчитываем diffы между каждой парой точек в this.dateArray
+		this.calculateCoords();
+		this.setAxisExtremums();
 console.timeEnd('timeOfOnInit');
 	}
 	getRates():void {
@@ -152,7 +154,7 @@ console.timeEnd('timeOfOnInit');
 		let yearLen: number = that.items.length - 1;
 		let monthLen: number = 0;
 		let dayLen: number = 0;
-		let currentEl: Day = {};
+		let currentEl: Day = {value: null, X: null, Y: null, cost: null, diff: null};
 		let prevEl: Day = undefined;
 		let prevDayLen: number;
 		let prevMonthLen: number;
@@ -173,6 +175,10 @@ console.timeEnd('timeOfOnInit');
 				for (let k = dayLen; k >= 0; k--) {
 
 					currentEl = that.items[i].items[j].items[k];
+
+					if ( (that.min < 0) || (currentEl.cost < that.min) ) that.min = currentEl.cost; // заодно минимум и максимум за период определим
+					if ( that.max < currentEl.cost ) that.max = currentEl.cost;
+
 					if (k > 0) {
 						prevEl = that.items[i].items[j].items[k - 1];
 					} else {
@@ -197,7 +203,49 @@ console.timeEnd('timeOfOnInit');
 
 		}
 
-		console.log(this.dateArray);
+		//console.log(that.min);
+		//console.log(that.max);
+
+	}
+	calculateCoords():void {
+
+		let that: DatePoints = this.dateArray;
+		let realCanvasWidth = this.bgrdCanvas.width - this.bgrdCanvas.right - this.bgrdCanvas.left;
+		let realCanvasHeight = this.bgrdCanvas.height - this.bgrdCanvas.top - this.bgrdCanvas.bottom;
+		//console.log(`${realCanvasWidth} x ${realCanvasHeight}`);
+		let sumOfYears: number = that.items.length;
+		let sumOfMonthes: number[] = [];
+		let sumOfDaysInMonthes: number[][] = [];
+		let monthLen: number = 0;
+		let dayLen: number = 0;
+		let totalDays: number = 0;
+		let totalMonthes: number = 0;
+
+		for (let i = 0; i < sumOfYears; i++) {
+			monthLen = that.items[i].items.length;
+			sumOfMonthes[i] = monthLen;
+			totalMonthes += monthLen;
+			for (let j = 0; j < monthLen; j++) {
+				dayLen = that.items[i].items[j].items.length;
+				if (sumOfDaysInMonthes[i] == undefined) sumOfDaysInMonthes[i] = [];
+				sumOfDaysInMonthes[i][j] = dayLen;
+				totalDays += dayLen;
+				//console.log("sumOfDaysInMonthes[" + i + "][" + j + "]    " + sumOfDaysInMonthes[i][j]);
+			}
+		}
+
+	}
+	setAxisExtremums():void {
+
+		let that: DatePoints = this.dateArray;
+		if ((that.min < 0) || (that.min == undefined)) return;
+		if ((that.max < 0) || (that.max == undefined)) return;
+		let range = that.max - that.min;
+
+		this.bgrdCanvas.minY = Math.floor((that.min - (range * 0.1)) * 10) / 10;
+		this.bgrdCanvas.maxY = Math.floor((that.max + (range * 0.1)) * 10) / 10;
+		
+		//console.log(this.bgrdCanvas.minY + "    " + this.bgrdCanvas.maxY);
 
 	}
 }

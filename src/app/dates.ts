@@ -30,12 +30,16 @@ export class Year {
 }
 export class DatePoints {
 	items: Year[];
+	min: number;
+	max: number;
 	cacheYear: number[];
 	cacheMonth: number[][];
 	cacheDay: number[][][];
 	constructor(points: Year[]) {
 		this.items = points;
 		this.clearCache();
+		this.min = -1;
+		this.max = -1;
 	}
 	clearCache():void {
 		this.cacheYear = [];
@@ -152,7 +156,7 @@ export class DatePoints {
 			return;
 		}
 
-		currEl.diff = Math.round((currEl.cost - prevEl.cost) * 100) / 100 );
+		currEl.diff = Math.round((currEl.cost - prevEl.cost) * 100) / 100;
 
 	}
 }
