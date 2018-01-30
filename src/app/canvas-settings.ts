@@ -9,10 +9,11 @@ export class CanvasSettings {
 	bottom: number;
 	left: number;
 
-	minX: number;
-	minY: number;
-	maxX: number;
-	maxY: number;
+	minY: number; // Минимальное значение по шкале Y (минимально возможное значение курса)
+	maxY: number; // Максимальное значение по шкале Y (максимально возможное значение курса)
+
+	axisXmonthes: number[]; // координаты месяцев по шкале X. Месяцы по ширине равны в незаисимости от кол-ва точек.
+	axisXpart: number; // кол-во пикселей в одном из делений по оси X
 
 	constructor(selector: string){
 		this.idSelector = selector;
@@ -22,10 +23,11 @@ export class CanvasSettings {
 		this.right = 30;
 		this.bottom = 20;
 		this.left = 30;
-		this.minX = -1;
 		this.minY = -1;
-		this.maxX = -1;
 		this.maxY = -1;
+		this.axisXmonthes = [];
+		this.axisXpart = 0;
+		
 	}
 
 }

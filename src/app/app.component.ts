@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CanvasSettings } from './canvas-settings';
 import { Rate } from './rate';
 import { RateService } from './rates.service';
@@ -11,7 +11,7 @@ import { DatePoints, Year, Month, Day } from './dates';
 	providers: [RateService]
 })
 
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, AfterViewInit {
 
 	title = 'Exchange Rates via Canvas';
 	bgrdCanvas = new CanvasSettings("bgrdCanvas");
@@ -20,18 +20,25 @@ export class AppComponent implements OnInit {
 	dateArray: DatePoints;
 
 	constructor(private _rateService: RateService){
-		
+
 	}
 
 	ngOnInit() {
+
 console.time('timeOfOnInit');
 		this.getRates(); 		// получаем массив котировок в this.rates
 		this.parseDataArray();	// перебиваем значения в объект this.dateArray
 		this.organizeArray();	// сортируем, чтобы даты в массивах this.dateArray шли по порядку друг за другом
 		this.setDiffs();		// высчитываем diffы между каждой парой точек в this.dateArray
-		this.calculateCoords();
 		this.setAxisExtremums();
+		this.calculateCoords();
 console.timeEnd('timeOfOnInit');
+
+}
+	ngAfterViewInit() {
+
+		this.drawBGRD();
+
 	}
 	getRates():void {
 		//this.rates = this._rateService.getRates(); // без ожидания
@@ -216,10 +223,12 @@ console.timeEnd('timeOfOnInit');
 		let sumOfYears: number = that.items.length;
 		let sumOfMonthes: number[] = [];
 		let sumOfDaysInMonthes: number[][] = [];
+		let yearLen: number = 0;
 		let monthLen: number = 0;
 		let dayLen: number = 0;
 		let totalDays: number = 0;
 		let totalMonthes: number = 0;
+		let axisXpart: number = 0; // кол-во пикселей в одном из делений по оси X
 
 		for (let i = 0; i < sumOfYears; i++) {
 			monthLen = that.items[i].items.length;
@@ -234,6 +243,45 @@ console.timeEnd('timeOfOnInit');
 			}
 		}
 
+		axisXpart = Math.round((realCanvasWidth / (totalMonthes + 1)) * 100) / 100;
+		this.bgrdCanvas.axisXpart = axisXpart;
+
+		for (let i = 0; i < totalMonthes; i++) {
+
+			this.bgrdCanvas.axisXmonthes[i] = this.bgrdCanvas.left + (axisXpart / 2) + (axisXpart * i);
+
+		}
+
+		yearLen = sumOfYears;
+		monthLen = 0;
+		dayLen = 0;
+
+		for (let i = 0; i < yearLen; i++) {
+
+			monthLen = that.items[i].items.length;
+
+			for (let j = 0; j < monthLen; j++) {
+
+				dayLen = that.items[i].items[j].items.length;
+
+				for (let k = 0; k < dayLen; k++) {
+
+					that.items[i].items[j].items[k].Y = this.bgrdCanvas.top + Math.round((realCanvasHeight * (this.bgrdCanvas.maxY - that.items[i].items[j].items[k].cost)/(this.bgrdCanvas.maxY - this.bgrdCanvas.minY)) * 100) / 100;
+					
+					that.items[i].items[j].items[k].X = Math.round( ( this.bgrdCanvas.left + (realCanvasWidth / (totalMonthes)) * (j + i*12) + (axisXpart/sumOfDaysInMonthes[i][j]) * k ) * 100) / 100;
+
+					console.log(this.bgrdCanvas.top + " + (" + realCanvasHeight + " * (" + this.bgrdCanvas.maxY + " - " + that.items[i].items[j].items[k].cost + ")/(" + this.bgrdCanvas.maxY + " - " + this.bgrdCanvas.minY + ")) == " + that.items[i].items[j].items[k].Y);
+
+//console.log(that.items[i].items[j].items[k].X + "    " + that.items[i].items[j].items[k].Y);
+//console.log((realCanvasWidth / (totalMonthes + 1)) * (j + i*12));
+//console.log(`${that.items[i].items[j].items[k].value}.${that.items[i].items[j].value}.${that.items[i].value} цена ${that.items[i].items[j].items[k].cost}, разница ${that.items[i].items[j].items[k].diff}`);
+
+				}
+
+			}
+
+		}
+
 	}
 	setAxisExtremums():void {
 
@@ -244,8 +292,79 @@ console.timeEnd('timeOfOnInit');
 
 		this.bgrdCanvas.minY = Math.floor((that.min - (range * 0.1)) * 10) / 10;
 		this.bgrdCanvas.maxY = Math.floor((that.max + (range * 0.1)) * 10) / 10;
-		
+
 		//console.log(this.bgrdCanvas.minY + "    " + this.bgrdCanvas.maxY);
+
+	}
+	drawBGRD():void {
+
+		let canvas: any = document.getElementById(this.bgrdCanvas.idSelector);
+		let ctx = canvas.getContext("2d");
+		let that: DatePoints = this.dateArray;
+		let realCanvasWidth = this.bgrdCanvas.width - this.bgrdCanvas.right - this.bgrdCanvas.left;
+		let realCanvasHeight = this.bgrdCanvas.height - this.bgrdCanvas.top - this.bgrdCanvas.bottom;
+		const CanvasYAxisZero = this.bgrdCanvas.top + realCanvasHeight;
+		const CanvasYAxisMax = this.bgrdCanvas.top;
+		let yearLen: number;
+		let monthLen: number;
+		let dayLen: number;
+		let prevX: number = that.items[0].items[0].items[0].X;
+		let prevY: number = that.items[0].items[0].items[0].Y;
+		
+		console.log(this.bgrdCanvas.minY);
+		console.log(this.bgrdCanvas.maxY);
+
+		ctx.beginPath();
+		ctx.moveTo(this.bgrdCanvas.left, CanvasYAxisZero);
+		ctx.lineTo(this.bgrdCanvas.left + realCanvasWidth, CanvasYAxisZero);
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = "#E5E7E9";
+		ctx.lineCap = "square";
+		ctx.stroke();
+
+		ctx.beginPath();
+		ctx.moveTo(this.bgrdCanvas.left, CanvasYAxisMax);
+		ctx.lineTo(this.bgrdCanvas.left + realCanvasWidth, CanvasYAxisMax);
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = "#E5E7E9";
+		ctx.lineCap = "square";
+		ctx.stroke();
+
+		ctx.font = "normal 12px Calibri";
+		ctx.fillStyle = "#99a0a8";
+		ctx.fillText(this.bgrdCanvas.maxY, this.bgrdCanvas.left - 26, this.bgrdCanvas.top + 3);
+		ctx.fillText(this.bgrdCanvas.minY, this.bgrdCanvas.left - 26, this.bgrdCanvas.top + realCanvasHeight + 3);
+
+		yearLen = that.items.length;
+		monthLen = 0;
+		dayLen = 0;
+
+		for (let i = 0; i < yearLen; i++) {
+
+			monthLen = that.items[i].items.length;
+
+			for (let j = 0; j < monthLen; j++) {
+
+				dayLen = that.items[i].items[j].items.length;
+
+				for (let k = 0; k < dayLen; k++) {
+
+					ctx.beginPath();
+					ctx.moveTo(prevX, prevY);
+					ctx.lineTo(that.items[i].items[j].items[k].X, that.items[i].items[j].items[k].Y);
+					ctx.lineWidth = 2;
+					ctx.strokeStyle = "#74A3C7";
+					ctx.lineCap = "round";
+					ctx.stroke();
+					prevX = that.items[i].items[j].items[k].X;
+					prevY = that.items[i].items[j].items[k].Y
+					console.log('prevX'+':'+'prevY');
+
+				}
+
+			}
+
+		}
 
 	}
 }
