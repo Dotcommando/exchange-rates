@@ -270,8 +270,6 @@ console.timeEnd('timeOfOnInit');
 					
 					that.items[i].items[j].items[k].X = Math.round( ( this.bgrdCanvas.left + (realCanvasWidth / (totalMonthes)) * (j + i*12) + (axisXpart/sumOfDaysInMonthes[i][j]) * k ) * 100) / 100;
 
-					console.log(this.bgrdCanvas.top + " + (" + realCanvasHeight + " * (" + this.bgrdCanvas.maxY + " - " + that.items[i].items[j].items[k].cost + ")/(" + this.bgrdCanvas.maxY + " - " + this.bgrdCanvas.minY + ")) == " + that.items[i].items[j].items[k].Y);
-
 //console.log(that.items[i].items[j].items[k].X + "    " + that.items[i].items[j].items[k].Y);
 //console.log((realCanvasWidth / (totalMonthes + 1)) * (j + i*12));
 //console.log(`${that.items[i].items[j].items[k].value}.${that.items[i].items[j].value}.${that.items[i].value} цена ${that.items[i].items[j].items[k].cost}, разница ${that.items[i].items[j].items[k].diff}`);
@@ -310,10 +308,10 @@ console.timeEnd('timeOfOnInit');
 		let dayLen: number;
 		let prevX: number = that.items[0].items[0].items[0].X;
 		let prevY: number = that.items[0].items[0].items[0].Y;
-		
-		console.log(this.bgrdCanvas.minY);
-		console.log(this.bgrdCanvas.maxY);
+		let linY: number = 0; // Линия коридора, значение будет меняться в ходе работы
+		let linYVal: number = 0; // Значение шкалы линии коридора
 
+		// Ось X
 		ctx.beginPath();
 		ctx.moveTo(this.bgrdCanvas.left, CanvasYAxisZero);
 		ctx.lineTo(this.bgrdCanvas.left + realCanvasWidth, CanvasYAxisZero);
@@ -322,6 +320,7 @@ console.timeEnd('timeOfOnInit');
 		ctx.lineCap = "square";
 		ctx.stroke();
 
+		// Верхняя линия коридора
 		ctx.beginPath();
 		ctx.moveTo(this.bgrdCanvas.left, CanvasYAxisMax);
 		ctx.lineTo(this.bgrdCanvas.left + realCanvasWidth, CanvasYAxisMax);
@@ -329,6 +328,36 @@ console.timeEnd('timeOfOnInit');
 		ctx.strokeStyle = "#E5E7E9";
 		ctx.lineCap = "square";
 		ctx.stroke();
+
+		// Линия нижней трети
+		ctx.beginPath();
+		linYVal = Math.floor((this.bgrdCanvas.minY + (this.bgrdCanvas.maxY - this.bgrdCanvas.minY) * 0.3333) * 10) / 10;
+		linY = this.bgrdCanvas.top + (Math.floor(realCanvasHeight * 0.6667 * 100) / 100);
+		ctx.moveTo(this.bgrdCanvas.left, linY);
+		ctx.lineTo(this.bgrdCanvas.left + realCanvasWidth, linY);
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = "#E5E7E9";
+		ctx.lineCap = "square";
+		ctx.stroke();
+
+		ctx.font = "normal 12px Calibri";
+		ctx.fillStyle = "#99a0a8";
+		ctx.fillText(linYVal, this.bgrdCanvas.left - 26, linY + 3);
+		
+		// Линия верхней трети
+		ctx.beginPath();
+		linYVal = Math.floor((this.bgrdCanvas.minY + (this.bgrdCanvas.maxY - this.bgrdCanvas.minY) * 0.6667) * 10) / 10;
+		linY = this.bgrdCanvas.top + (Math.floor(realCanvasHeight * 0.3333 * 100) / 100);
+		ctx.moveTo(this.bgrdCanvas.left, linY);
+		ctx.lineTo(this.bgrdCanvas.left + realCanvasWidth, linY);
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = "#E5E7E9";
+		ctx.lineCap = "square";
+		ctx.stroke();
+
+		ctx.font = "normal 12px Calibri";
+		ctx.fillStyle = "#99a0a8";
+		ctx.fillText(linYVal, this.bgrdCanvas.left - 26, linY + 3);
 
 		ctx.font = "normal 12px Calibri";
 		ctx.fillStyle = "#99a0a8";
@@ -358,7 +387,6 @@ console.timeEnd('timeOfOnInit');
 					ctx.stroke();
 					prevX = that.items[i].items[j].items[k].X;
 					prevY = that.items[i].items[j].items[k].Y
-					console.log('prevX'+':'+'prevY');
 
 				}
 
