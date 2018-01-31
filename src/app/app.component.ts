@@ -1,8 +1,8 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, HostListener } from '@angular/core';
 import { CanvasSettings } from './canvas-settings';
 import { Rate } from './rate';
 import { RateService } from './rates.service';
-import { DatePoints, Year, Month, Day } from './dates';
+import { DatePoints, Year, Month, Day, Monthes } from './dates';
 
 @Component({
 	selector: 'app-root',
@@ -12,6 +12,11 @@ import { DatePoints, Year, Month, Day } from './dates';
 })
 
 export class AppComponent implements OnInit, AfterViewInit {
+
+	@HostListener('document:mousemove', ['$event']) 
+	onMouseMove(e) {
+		//console.log(e);
+	}
 
 	title = 'Exchange Rates via Canvas';
 	bgrdCanvas = new CanvasSettings("bgrdCanvas");
@@ -371,10 +376,26 @@ console.timeEnd('timeOfOnInit');
 		for (let i = 0; i < yearLen; i++) {
 
 			monthLen = that.items[i].items.length;
+			ctx.beginPath();
+			ctx.moveTo(that.items[i].items[0].items[0].X, CanvasYAxisZero);
+			ctx.lineTo(that.items[i].items[0].items[0].X, CanvasYAxisZero + 30);
+			ctx.lineWidth = 1;
+			ctx.strokeStyle = "#E5E7E9";
+			ctx.lineCap = "square";
+			ctx.stroke();
+
+			ctx.font = "normal 12px Calibri";
+			ctx.fillStyle = "#99a0a8";
+			ctx.textAlign = "left";
+			ctx.fillText(that.items[i].value + " →", that.items[i].items[0].items[0].X + 12, CanvasYAxisZero + 28);
 
 			for (let j = 0; j < monthLen; j++) {
 
 				dayLen = that.items[i].items[j].items.length;
+				ctx.font = "normal 12px Calibri";
+				ctx.fillStyle = "#99a0a8";
+				ctx.textAlign = "center";
+				ctx.fillText(Monthes[that.items[i].items[j].value], this.bgrdCanvas.left + that.items[i].items[j].items[0].X, CanvasYAxisZero + 14);
 
 				for (let k = 0; k < dayLen; k++) {
 

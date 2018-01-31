@@ -19,9 +19,9 @@ export class CanvasSettings {
 		this.idSelector = selector;
 		this.width = 900;
 		this.height = 280;
-		this.top = 20;
+		this.top = 30;
 		this.right = 30;
-		this.bottom = 20;
+		this.bottom = 30;
 		this.left = 30;
 		this.minY = -1;
 		this.maxY = -1;
