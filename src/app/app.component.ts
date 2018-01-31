@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, HostListener } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CanvasSettings } from './canvas-settings';
 import { Rate } from './rate';
 import { RateService } from './rates.service';
@@ -13,16 +13,151 @@ import { DatePoints, Year, Month, Day, Monthes } from './dates';
 
 export class AppComponent implements OnInit, AfterViewInit {
 
-	@HostListener('document:mousemove', ['$event']) 
-	onMouseMove(e) {
-		//console.log(e);
-	}
+    event: MouseEvent;
+    clientX:number = 0;
+    clientY:number = 0;
+	prevX: number = 0;
+	prevY: number = 0;
+
+    onEvent(event: MouseEvent): void {
+        this.event = event;
+    }
+
+    redraw(event: MouseEvent): void {
+
+		let realCanvasWidth: number = this.dynCanvas.width - this.dynCanvas.right - this.dynCanvas.left;
+		let realCanvasHeight: number = this.dynCanvas.height - this.dynCanvas.top - this.dynCanvas.bottom;
+		let canvas: any = document.getElementById(this.dynCanvas.idSelector);
+		let ctx = canvas.getContext("2d");
+		let that: DatePoints = this.dateArray;
+		let axisXpart: number = this.bgrdCanvas.axisXpart;
+		let whichMonth: number = 0;
+		let whichYear: number = 0;
+		let prevValue: number = 0; // Для отслеживания значения X в массиве DatePoints
+		let currentDayIndex: number = 0; // Индекс текщего дня в массиве DatePoints
+		let clientX: number = 0;
+		let totalMonthes: number = this.totalMonthes;
+		const CanvasYAxisZero = this.bgrdCanvas.top + realCanvasHeight;
+		const CanvasYAxisMax = this.bgrdCanvas.top;
+		const maxClientCanvasX = this.dynCanvas.left + realCanvasWidth;
+
+		this.clientX = Math.round(event.clientX - canvas.getBoundingClientRect().x);
+		this.clientY = Math.round(event.clientY - canvas.getBoundingClientRect().y);
+
+		if (this.clientX > maxClientCanvasX) {
+			this.prevX = this.clientX;
+			this.prevY = this.clientY;
+			return;
+		}
+		
+		if (this.prevX == this.clientX) {
+			this.prevY = this.clientY;
+			return;
+		} // Если курсор смещается по вертикали, оставляем всё как есть
+
+		whichYear = Math.floor((this.clientX - this.dynCanvas.left + 7) / (axisXpart * 12));	// 5 - "волшебное число" 
+		whichMonth = Math.floor(((this.clientX - this.dynCanvas.left + 8) / axisXpart) % 12); 	// 8 - "волшебное число" добивает косяки округления
+		//console.log(this.clientX + ":" + this.clientY + "        " + whichYear + " : " + whichMonth + "    realMonth: " + ((this.clientX - this.dynCanvas.left) / axisXpart) % 12);
+		clientX = this.clientX;
+
+		if ((whichYear < 0) || (whichMonth < 0) || (clientX < 0)) {
+			this.prevX = this.clientX;
+			this.prevY = this.clientY;
+			return;
+		}
+		if (that.sumOfDaysInMonthes[whichYear] == undefined) {
+			this.prevX = this.clientX;
+			this.prevY = this.clientY;
+			return;
+		}
+		if (that.sumOfDaysInMonthes[whichYear][whichMonth] == undefined) {
+			this.prevX = this.clientX;
+			this.prevY = this.clientY;
+			return;
+		}
+
+		let sumOfDaysInMonth = that.sumOfDaysInMonthes[whichYear][whichMonth];
+
+		if (sumOfDaysInMonth == undefined) {
+			this.prevX = this.clientX;
+			this.prevY = this.clientY;
+			return;
+		}
+
+		let monthRange: Month = that.items[whichYear].items[whichMonth];
+		prevValue = -1; // заведомо даём несуществующее значение
+
+		for (let k = 0; k < sumOfDaysInMonth; k++ ) {
+
+			//console.log("clientX = " + clientX + "   monthRange = " + monthRange.items[k].X + "    prevValue = " + prevValue +  "   k = " + k);
+
+			// если это первая итерация и сразу попали в цель
+			if ((prevValue < 0) && (monthRange.items[k].X == clientX)) {
+				currentDayIndex = k;
+				break;
+			}
+
+			// итерация первая, но не попали
+			if (prevValue < 0) {
+				prevValue = k;
+				continue;
+			}
+
+			// точка оказалась между предыдущим и текущим значениями
+			if ((monthRange.items[k].X >= clientX) && (monthRange.items[prevValue].X < clientX)) {
+				if ((monthRange.items[k].X - clientX) > (clientX - monthRange.items[prevValue].X) ) {
+					currentDayIndex = prevValue;
+					break;
+				} else {
+					currentDayIndex = k;
+					break;
+				}
+			}
+
+			// точка оказалась сильно позади, т.е. и предыдущее и текущее значения больше остатка
+			if ((monthRange.items[prevValue].X >= clientX) && (monthRange.items[k].X > clientX)) {
+				currentDayIndex = prevValue;
+				break;
+			}
+
+		}
+
+		let point: Day = that.items[whichYear].items[whichMonth].items[currentDayIndex];
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		let dashList: number[] = [3, 3];
+
+		ctx.beginPath();
+		ctx.setLineDash(dashList);
+		ctx.moveTo(point.X, point.Y);
+		ctx.lineTo(point.X, CanvasYAxisZero);
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = "#E5E7E9";
+		ctx.lineCap = "square";
+		ctx.stroke();
+
+		ctx.beginPath();  
+		ctx.arc(point.X, point.Y, 5, 0, 2*Math.PI, true);
+		ctx.fillStyle="#f6f7f8";
+		ctx.fill();
+		
+		ctx.beginPath();  
+		ctx.arc(point.X, point.Y, 4, 0, 2*Math.PI, true);
+		ctx.fillStyle="#74a3c7";
+		ctx.fill();
+
+		this.prevX = this.clientX;
+		this.prevY = this.clientY;
+		
+    }
 
 	title = 'Exchange Rates via Canvas';
-	bgrdCanvas = new CanvasSettings("bgrdCanvas");
-	interactiveCanvas = new CanvasSettings("iaCanvas");
+	bgrdCanvas: CanvasSettings = new CanvasSettings("bgrdCanvas");
+	dynCanvas: CanvasSettings = new CanvasSettings("iaCanvas");
 	rates: Rate[];
 	dateArray: DatePoints;
+	totalMonthes: number = 0;
 
 	constructor(private _rateService: RateService){
 
@@ -35,8 +170,8 @@ console.time('timeOfOnInit');
 		this.parseDataArray();	// перебиваем значения в объект this.dateArray
 		this.organizeArray();	// сортируем, чтобы даты в массивах this.dateArray шли по порядку друг за другом
 		this.setDiffs();		// высчитываем diffы между каждой парой точек в this.dateArray
-		this.setAxisExtremums();
-		this.calculateCoords();
+		this.setAxisExtremums();// устанавливаем максимум и минимум для оси Y
+		this.calculateCoords();	// просчитываем координаты для каждой точки
 console.timeEnd('timeOfOnInit');
 
 }
@@ -224,7 +359,6 @@ console.timeEnd('timeOfOnInit');
 		let that: DatePoints = this.dateArray;
 		let realCanvasWidth = this.bgrdCanvas.width - this.bgrdCanvas.right - this.bgrdCanvas.left;
 		let realCanvasHeight = this.bgrdCanvas.height - this.bgrdCanvas.top - this.bgrdCanvas.bottom;
-		//console.log(`${realCanvasWidth} x ${realCanvasHeight}`);
 		let sumOfYears: number = that.items.length;
 		let sumOfMonthes: number[] = [];
 		let sumOfDaysInMonthes: number[][] = [];
@@ -248,12 +382,17 @@ console.timeEnd('timeOfOnInit');
 			}
 		}
 
-		axisXpart = Math.round((realCanvasWidth / (totalMonthes + 1)) * 100) / 100;
+		that.sumOfYears = sumOfYears;
+		that.sumOfMonthes = sumOfMonthes;
+		that.sumOfDaysInMonthes = sumOfDaysInMonthes;
+		that.totalMonthes = totalMonthes;
+
+		axisXpart = Math.round((realCanvasWidth / totalMonthes) * 100) / 100;
 		this.bgrdCanvas.axisXpart = axisXpart;
 
 		for (let i = 0; i < totalMonthes; i++) {
 
-			this.bgrdCanvas.axisXmonthes[i] = this.bgrdCanvas.left + (axisXpart / 2) + (axisXpart * i);
+			this.bgrdCanvas.axisXmonthes[i] = this.bgrdCanvas.left + (axisXpart * i);
 
 		}
 
@@ -272,8 +411,8 @@ console.timeEnd('timeOfOnInit');
 				for (let k = 0; k < dayLen; k++) {
 
 					that.items[i].items[j].items[k].Y = this.bgrdCanvas.top + Math.round((realCanvasHeight * (this.bgrdCanvas.maxY - that.items[i].items[j].items[k].cost)/(this.bgrdCanvas.maxY - this.bgrdCanvas.minY)) * 100) / 100;
-					
-					that.items[i].items[j].items[k].X = Math.round( ( this.bgrdCanvas.left + (realCanvasWidth / (totalMonthes)) * (j + i*12) + (axisXpart/sumOfDaysInMonthes[i][j]) * k ) * 100) / 100;
+
+					that.items[i].items[j].items[k].X = Math.round( ( this.bgrdCanvas.left + axisXpart * (j + i*12) + (axisXpart/sumOfDaysInMonthes[i][j]) * k ) * 100) / 100;
 
 //console.log(that.items[i].items[j].items[k].X + "    " + that.items[i].items[j].items[k].Y);
 //console.log((realCanvasWidth / (totalMonthes + 1)) * (j + i*12));
@@ -407,7 +546,7 @@ console.timeEnd('timeOfOnInit');
 					ctx.lineCap = "round";
 					ctx.stroke();
 					prevX = that.items[i].items[j].items[k].X;
-					prevY = that.items[i].items[j].items[k].Y
+					prevY = that.items[i].items[j].items[k].Y;
 
 				}
 

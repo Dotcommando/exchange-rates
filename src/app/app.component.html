@@ -8,7 +8,7 @@
 
 <div class="canvasOuter">
 	<canvas id="{{bgrdCanvas.idSelector}}" width="{{bgrdCanvas.width}}" height="{{bgrdCanvas.height}}"></canvas>
-	<canvas id="{{interactiveCanvas.idSelector}}" width="{{interactiveCanvas.width}}" height="{{interactiveCanvas.height}}"></canvas>
+	<canvas id="{{dynCanvas.idSelector}}" width="{{dynCanvas.width}}" height="{{dynCanvas.height}}"(mousemove)="redraw($event)"></canvas>
 </div>
 
 <ul>
@@ -20,11 +20,11 @@
 </ul>
 
 <ul>
-<li>interactiveCanvas.idSelector: {{interactiveCanvas.idSelector}}</li>
-<li>interactiveCanvas.width: {{interactiveCanvas.width}}</li>
-<li>interactiveCanvas.height: {{interactiveCanvas.height}}</li>
-<li>interactiveCanvas.paddings.top: {{interactiveCanvas.top}}</li>
-<li>interactiveCanvas.paddings.right: {{interactiveCanvas.right}}</li>
+<li>dynCanvas.idSelector: {{dynCanvas.idSelector}}</li>
+<li>dynCanvas.width: {{dynCanvas.width}}</li>
+<li>dynCanvas.height: {{dynCanvas.height}}</li>
+<li>dynCanvas.paddings.top: {{dynCanvas.top}}</li>
+<li>dynCanvas.paddings.right: {{dynCanvas.right}}</li>
 </ul>
 
 <ul>
