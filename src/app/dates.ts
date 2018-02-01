@@ -39,6 +39,7 @@ export class DatePoints {
 	sumOfMonthes: number[];
 	sumOfDaysInMonthes: number[][];
 	totalMonthes: number;
+
 	constructor(points: Year[]) {
 		this.items = points;
 		this.clearCache();

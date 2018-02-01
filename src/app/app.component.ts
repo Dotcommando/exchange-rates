@@ -18,6 +18,11 @@ export class AppComponent implements OnInit, AfterViewInit {
     clientY:number = 0;
 	prevX: number = 0;
 	prevY: number = 0;
+	title = 'Exchange Rates via Canvas';
+	bgrdCanvas: CanvasSettings = new CanvasSettings("bgrdCanvas");
+	dynCanvas: CanvasSettings = new CanvasSettings("iaCanvas");
+	rates: Rate[];
+	dateArray: DatePoints;
 	cacheChart: Object = {};
 
     onEvent(event: MouseEvent): void {
@@ -33,16 +38,18 @@ export class AppComponent implements OnInit, AfterViewInit {
 		let ctx = canvas.getContext("2d");
 		let that: DatePoints = this.dateArray;
 		let axisXpart: number = this.bgrdCanvas.axisXpart;
-		let whichMonth: number = 0;
-		let whichYear: number = 0;
+		let whichMonth: number = -1;
+		let whichYear: number = -1;
 		let prevValue: number = 0; // Для отслеживания значения X в массиве DatePoints
 		let currentDayIndex: number = 0; // Индекс текщего дня в массиве DatePoints
 		let clientX: number = 0;
-		let totalMonthes: number = this.totalMonthes;
+		let totalMonthes: number = that.totalMonthes;
 		const CanvasYAxisZero = this.bgrdCanvas.top + realCanvasHeight;
 		const CanvasYAxisMax = this.bgrdCanvas.top;
 		const maxClientCanvasX = this.dynCanvas.left + realCanvasWidth;
 		let cacheChart = this.cacheChart;
+		let partOfMonthes: number = 0; // вспомогательная переменная при поиске диапазона clientX с точночтью до месяца
+		let indexOfPart: number = 0; // вспомогательная переменная, содержит индекс месяца, в который попадает clientX
 
 		this.clientX = Math.round(event.clientX - canvas.getBoundingClientRect().x);
 		this.clientY = Math.round(event.clientY - canvas.getBoundingClientRect().y);
@@ -75,10 +82,32 @@ export class AppComponent implements OnInit, AfterViewInit {
 				return;
 			} // Если курсор смещается по вертикали, оставляем всё как есть
 
-			whichYear = Math.floor((clientX - this.dynCanvas.left + 7) / (axisXpart * 12));	// 5 - "волшебное число" 
-			whichMonth = Math.floor(((clientX - this.dynCanvas.left + 8) / axisXpart) % 12); 	// 8 - "волшебное число" добивает косяки округления
+			partOfMonthes += this.dynCanvas.left;
+			for (let i = 0; i < totalMonthes; i++ ) { // считаем, в каком месяце по порядку находится курсор
+
+				partOfMonthes += axisXpart;
+				if (partOfMonthes >= clientX) {
+
+					indexOfPart = i;
+					break;
+
+				}
+
+			}
+
+			if (indexOfPart < that.sumOfMonthes[0]) {
+
+				whichYear = 0;
+				whichMonth = indexOfPart;
+
+			} else {
+
+				whichYear = 1 + (Math.floor((indexOfPart - that.sumOfMonthes[0]) / 12)); // в любом случае, в каждом следующем году после первого по 12 месяцев
+				whichMonth = (indexOfPart - that.sumOfMonthes[0]) % 12;
+
+			}
+
 			//console.log(this.clientX + ":" + this.clientY + "        " + whichYear + " : " + whichMonth + "    realMonth: " + ((this.clientX - this.dynCanvas.left) / axisXpart) % 12);
-			
 
 			if ((whichYear < 0) || (whichMonth < 0) || (clientX < 0)) {
 				this.prevX = this.clientX;
@@ -113,15 +142,20 @@ export class AppComponent implements OnInit, AfterViewInit {
 
 			for (let k = 0; k < sumOfDaysInMonth; k++ ) {
 
-				//console.log("clientX = " + clientX + "   monthRange = " + monthRange.items[k].X + "    prevValue = " + prevValue +  "   k = " + k);
+				// если точка оказалась зажата между месяцами справа
+				if ((k == sumOfDaysInMonth - 1) && (clientX > monthRange.items[k].X)) {
 
-				// если это первая итерация и сразу попали в цель
-				if ((prevValue < 0) && (monthRange.items[k].X == clientX)) {
+					monthRange = that.items[whichYear].items[whichMonth];
 					currentDayIndex = k;
-					cacheChart[clientX] = {};
-					cacheChart[clientX].year = whichYear;
-					cacheChart[clientX].month = whichMonth;
-					cacheChart[clientX].day = currentDayIndex;
+					//console.log("X:          whichMonth = " + whichMonth + "    currentDay = " + that.items[whichYear].items[whichMonth].items[currentDayIndex].value);
+					break;
+
+				}
+
+				// если это первая итерация и точка между месяцами слева
+				if ((prevValue < 0) && (monthRange.items[k].X >= clientX)) {
+					currentDayIndex = k;
+					//console.log("X:          whichMonth = " + whichMonth + "    currentDay = " + that.items[whichYear].items[whichMonth].items[currentDayIndex].value);
 					break;
 				}
 
@@ -133,19 +167,14 @@ export class AppComponent implements OnInit, AfterViewInit {
 
 				// точка оказалась между предыдущим и текущим значениями
 				if ((monthRange.items[k].X >= clientX) && (monthRange.items[prevValue].X < clientX)) {
-					if ((monthRange.items[k].X - clientX) > (clientX - monthRange.items[prevValue].X) ) {
+					if ((monthRange.items[k].X - clientX) > (clientX - monthRange.items[prevValue].X)) {
 						currentDayIndex = prevValue;
-						cacheChart[clientX] = {};
-						cacheChart[clientX].year = whichYear;
-						cacheChart[clientX].month = whichMonth;
-						cacheChart[clientX].day = currentDayIndex;
+						//console.log("prevValue:  whichMonth = " + whichMonth + "    currentDay = " + that.items[whichYear].items[whichMonth].items[currentDayIndex].X);
 						break;
 					} else {
+						
 						currentDayIndex = k;
-						cacheChart[clientX] = {};
-						cacheChart[clientX].year = whichYear;
-						cacheChart[clientX].month = whichMonth;
-						cacheChart[clientX].day = currentDayIndex;
+						//console.log("X:          whichMonth = " + whichMonth + "    currentDay = " + that.items[whichYear].items[whichMonth].items[currentDayIndex].X);
 						break;
 					}
 				}
@@ -153,14 +182,18 @@ export class AppComponent implements OnInit, AfterViewInit {
 				// точка оказалась сильно позади, т.е. и предыдущее и текущее значения больше остатка
 				if ((monthRange.items[prevValue].X >= clientX) && (monthRange.items[k].X > clientX)) {
 					currentDayIndex = prevValue;
-					cacheChart[clientX] = {};
-					cacheChart[clientX].year = whichYear;
-					cacheChart[clientX].month = whichMonth;
-					cacheChart[clientX].day = currentDayIndex;
+					//console.log("X:          whichMonth = " + whichMonth + "    currentDay = " + that.items[whichYear].items[whichMonth].items[currentDayIndex].X);
 					break;
 				}
 
 			}
+
+			cacheChart[clientX] = {};
+			cacheChart[clientX].year = whichYear;
+			cacheChart[clientX].month = whichMonth;
+			cacheChart[clientX].day = currentDayIndex;
+
+			//console.log(that.items[whichYear].value + " . " + that.items[whichYear].items[whichMonth].value + " . " + that.items[whichYear].items[whichMonth].items[currentDayIndex].value);
 
 		}
 
@@ -194,13 +227,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 		//console.timeEnd('timeOfRedraw');
 
     }
-
-	title = 'Exchange Rates via Canvas';
-	bgrdCanvas: CanvasSettings = new CanvasSettings("bgrdCanvas");
-	dynCanvas: CanvasSettings = new CanvasSettings("iaCanvas");
-	rates: Rate[];
-	dateArray: DatePoints;
-	totalMonthes: number = 0;
 
 	constructor(private _rateService: RateService){
 
@@ -403,13 +429,13 @@ console.timeEnd('timeOfOnInit');
 		let realCanvasWidth = this.bgrdCanvas.width - this.bgrdCanvas.right - this.bgrdCanvas.left;
 		let realCanvasHeight = this.bgrdCanvas.height - this.bgrdCanvas.top - this.bgrdCanvas.bottom;
 		let sumOfYears: number = that.items.length;
-		let sumOfMonthes: number[] = [];
+		let sumOfMonthes: number[] = []; // месяцев в каждом году
 		let sumOfDaysInMonthes: number[][] = [];
 		let yearLen: number = 0;
 		let monthLen: number = 0;
 		let dayLen: number = 0;
 		let totalDays: number = 0;
-		let totalMonthes: number = 0;
+		let totalMonthes: number = 0; // месяцев всего на шкале X
 		let axisXpart: number = 0; // кол-во пикселей в одном из делений по оси X
 
 		for (let i = 0; i < sumOfYears; i++) {
@@ -442,6 +468,7 @@ console.timeEnd('timeOfOnInit');
 		yearLen = sumOfYears;
 		monthLen = 0;
 		dayLen = 0;
+		let monthes: number = -1; 
 
 		for (let i = 0; i < yearLen; i++) {
 
@@ -450,12 +477,14 @@ console.timeEnd('timeOfOnInit');
 			for (let j = 0; j < monthLen; j++) {
 
 				dayLen = that.items[i].items[j].items.length;
+				monthes++;
+				if (j == monthLen - 1) that.sumOfMonthes[i] = j + 1;
 
 				for (let k = 0; k < dayLen; k++) {
 
 					that.items[i].items[j].items[k].Y = this.bgrdCanvas.top + Math.round((realCanvasHeight * (this.bgrdCanvas.maxY - that.items[i].items[j].items[k].cost)/(this.bgrdCanvas.maxY - this.bgrdCanvas.minY)) * 100) / 100;
 
-					that.items[i].items[j].items[k].X = Math.round( ( this.bgrdCanvas.left + axisXpart * (j + i*12) + (axisXpart/sumOfDaysInMonthes[i][j]) * k ) * 100) / 100;
+					that.items[i].items[j].items[k].X = Math.round( ( this.bgrdCanvas.left + axisXpart * monthes + (axisXpart/sumOfDaysInMonthes[i][j]) * k ) * 100) / 100; // вместо (j + i*12) -- тут используем monthes, т.к. месяцы могут и с июня начаться, например. Это зависит от выбранного диапазона
 
 //console.log(that.items[i].items[j].items[k].X + "    " + that.items[i].items[j].items[k].Y);
 //console.log((realCanvasWidth / (totalMonthes + 1)) * (j + i*12));
@@ -590,6 +619,9 @@ console.timeEnd('timeOfOnInit');
 					ctx.stroke();
 					prevX = that.items[i].items[j].items[k].X;
 					prevY = that.items[i].items[j].items[k].Y;
+					//if (i == 1) {
+					//	console.log(that.items[i].items[j].items[k].X + ":" + that.items[i].items[j].items[k].Y);
+					//}
 
 				}
 
@@ -598,4 +630,5 @@ console.timeEnd('timeOfOnInit');
 		}
 
 	}
+
 }
