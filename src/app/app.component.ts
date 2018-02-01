@@ -18,6 +18,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     clientY:number = 0;
 	prevX: number = 0;
 	prevY: number = 0;
+	cacheChart: Object = {};
 
     onEvent(event: MouseEvent): void {
         this.event = event;
@@ -25,6 +26,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     redraw(event: MouseEvent): void {
 
+		//console.time('timeOfRedraw'); // Подтверждение работы кэша
 		let realCanvasWidth: number = this.dynCanvas.width - this.dynCanvas.right - this.dynCanvas.left;
 		let realCanvasHeight: number = this.dynCanvas.height - this.dynCanvas.top - this.dynCanvas.bottom;
 		let canvas: any = document.getElementById(this.dynCanvas.idSelector);
@@ -40,84 +42,124 @@ export class AppComponent implements OnInit, AfterViewInit {
 		const CanvasYAxisZero = this.bgrdCanvas.top + realCanvasHeight;
 		const CanvasYAxisMax = this.bgrdCanvas.top;
 		const maxClientCanvasX = this.dynCanvas.left + realCanvasWidth;
+		let cacheChart = this.cacheChart;
 
 		this.clientX = Math.round(event.clientX - canvas.getBoundingClientRect().x);
 		this.clientY = Math.round(event.clientY - canvas.getBoundingClientRect().y);
 
-		if (this.clientX > maxClientCanvasX) {
-			this.prevX = this.clientX;
-			this.prevY = this.clientY;
-			return;
-		}
-		
-		if (this.prevX == this.clientX) {
-			this.prevY = this.clientY;
-			return;
-		} // Если курсор смещается по вертикали, оставляем всё как есть
-
-		whichYear = Math.floor((this.clientX - this.dynCanvas.left + 7) / (axisXpart * 12));	// 5 - "волшебное число" 
-		whichMonth = Math.floor(((this.clientX - this.dynCanvas.left + 8) / axisXpart) % 12); 	// 8 - "волшебное число" добивает косяки округления
-		//console.log(this.clientX + ":" + this.clientY + "        " + whichYear + " : " + whichMonth + "    realMonth: " + ((this.clientX - this.dynCanvas.left) / axisXpart) % 12);
 		clientX = this.clientX;
 
-		if ((whichYear < 0) || (whichMonth < 0) || (clientX < 0)) {
+		if (cacheChart[clientX] !== undefined) {
+
+			whichYear = cacheChart[clientX].year;
+			whichMonth = cacheChart[clientX].month;
+			currentDayIndex = cacheChart[clientX].day;
 			this.prevX = this.clientX;
 			this.prevY = this.clientY;
-			return;
-		}
-		if (that.sumOfDaysInMonthes[whichYear] == undefined) {
-			this.prevX = this.clientX;
-			this.prevY = this.clientY;
-			return;
-		}
-		if (that.sumOfDaysInMonthes[whichYear][whichMonth] == undefined) {
-			this.prevX = this.clientX;
-			this.prevY = this.clientY;
-			return;
+			//console.log("Drew with cache " + clientX);
+
 		}
 
-		let sumOfDaysInMonth = that.sumOfDaysInMonthes[whichYear][whichMonth];
+		else {
 
-		if (sumOfDaysInMonth == undefined) {
-			this.prevX = this.clientX;
-			this.prevY = this.clientY;
-			return;
-		}
+			if (clientX > maxClientCanvasX) {
+				this.prevX = this.clientX;
+				this.prevY = this.clientY;
+				//console.timeEnd('timeOfRedraw');
+				return;
+			}
+			
+			if (this.prevX == clientX) {
+				this.prevY = this.clientY;
+				//console.timeEnd('timeOfRedraw');
+				return;
+			} // Если курсор смещается по вертикали, оставляем всё как есть
 
-		let monthRange: Month = that.items[whichYear].items[whichMonth];
-		prevValue = -1; // заведомо даём несуществующее значение
+			whichYear = Math.floor((clientX - this.dynCanvas.left + 7) / (axisXpart * 12));	// 5 - "волшебное число" 
+			whichMonth = Math.floor(((clientX - this.dynCanvas.left + 8) / axisXpart) % 12); 	// 8 - "волшебное число" добивает косяки округления
+			//console.log(this.clientX + ":" + this.clientY + "        " + whichYear + " : " + whichMonth + "    realMonth: " + ((this.clientX - this.dynCanvas.left) / axisXpart) % 12);
+			
 
-		for (let k = 0; k < sumOfDaysInMonth; k++ ) {
-
-			//console.log("clientX = " + clientX + "   monthRange = " + monthRange.items[k].X + "    prevValue = " + prevValue +  "   k = " + k);
-
-			// если это первая итерация и сразу попали в цель
-			if ((prevValue < 0) && (monthRange.items[k].X == clientX)) {
-				currentDayIndex = k;
-				break;
+			if ((whichYear < 0) || (whichMonth < 0) || (clientX < 0)) {
+				this.prevX = this.clientX;
+				this.prevY = this.clientY;
+				//console.timeEnd('timeOfRedraw');
+				return;
+			}
+			if (that.sumOfDaysInMonthes[whichYear] == undefined) {
+				this.prevX = this.clientX;
+				this.prevY = this.clientY;
+				//console.timeEnd('timeOfRedraw');
+				return;
+			}
+			if (that.sumOfDaysInMonthes[whichYear][whichMonth] == undefined) {
+				this.prevX = this.clientX;
+				this.prevY = this.clientY;
+				//console.timeEnd('timeOfRedraw');
+				return;
 			}
 
-			// итерация первая, но не попали
-			if (prevValue < 0) {
-				prevValue = k;
-				continue;
+			let sumOfDaysInMonth = that.sumOfDaysInMonthes[whichYear][whichMonth];
+
+			if (sumOfDaysInMonth == undefined) {
+				this.prevX = this.clientX;
+				this.prevY = this.clientY;
+				//console.timeEnd('timeOfRedraw');
+				return;
 			}
 
-			// точка оказалась между предыдущим и текущим значениями
-			if ((monthRange.items[k].X >= clientX) && (monthRange.items[prevValue].X < clientX)) {
-				if ((monthRange.items[k].X - clientX) > (clientX - monthRange.items[prevValue].X) ) {
-					currentDayIndex = prevValue;
-					break;
-				} else {
+			let monthRange: Month = that.items[whichYear].items[whichMonth];
+			prevValue = -1; // заведомо даём несуществующее значение
+
+			for (let k = 0; k < sumOfDaysInMonth; k++ ) {
+
+				//console.log("clientX = " + clientX + "   monthRange = " + monthRange.items[k].X + "    prevValue = " + prevValue +  "   k = " + k);
+
+				// если это первая итерация и сразу попали в цель
+				if ((prevValue < 0) && (monthRange.items[k].X == clientX)) {
 					currentDayIndex = k;
+					cacheChart[clientX] = {};
+					cacheChart[clientX].year = whichYear;
+					cacheChart[clientX].month = whichMonth;
+					cacheChart[clientX].day = currentDayIndex;
 					break;
 				}
-			}
 
-			// точка оказалась сильно позади, т.е. и предыдущее и текущее значения больше остатка
-			if ((monthRange.items[prevValue].X >= clientX) && (monthRange.items[k].X > clientX)) {
-				currentDayIndex = prevValue;
-				break;
+				// итерация первая, но не попали
+				if (prevValue < 0) {
+					prevValue = k;
+					continue;
+				}
+
+				// точка оказалась между предыдущим и текущим значениями
+				if ((monthRange.items[k].X >= clientX) && (monthRange.items[prevValue].X < clientX)) {
+					if ((monthRange.items[k].X - clientX) > (clientX - monthRange.items[prevValue].X) ) {
+						currentDayIndex = prevValue;
+						cacheChart[clientX] = {};
+						cacheChart[clientX].year = whichYear;
+						cacheChart[clientX].month = whichMonth;
+						cacheChart[clientX].day = currentDayIndex;
+						break;
+					} else {
+						currentDayIndex = k;
+						cacheChart[clientX] = {};
+						cacheChart[clientX].year = whichYear;
+						cacheChart[clientX].month = whichMonth;
+						cacheChart[clientX].day = currentDayIndex;
+						break;
+					}
+				}
+
+				// точка оказалась сильно позади, т.е. и предыдущее и текущее значения больше остатка
+				if ((monthRange.items[prevValue].X >= clientX) && (monthRange.items[k].X > clientX)) {
+					currentDayIndex = prevValue;
+					cacheChart[clientX] = {};
+					cacheChart[clientX].year = whichYear;
+					cacheChart[clientX].month = whichMonth;
+					cacheChart[clientX].day = currentDayIndex;
+					break;
+				}
+
 			}
 
 		}
@@ -149,7 +191,8 @@ export class AppComponent implements OnInit, AfterViewInit {
 
 		this.prevX = this.clientX;
 		this.prevY = this.clientY;
-		
+		//console.timeEnd('timeOfRedraw');
+
     }
 
 	title = 'Exchange Rates via Canvas';
