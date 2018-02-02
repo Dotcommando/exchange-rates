@@ -8,7 +8,7 @@
 
 <div class="canvasOuter">
 	<canvas id="{{bgrdCanvas.idSelector}}" width="{{bgrdCanvas.width}}" height="{{bgrdCanvas.height}}"></canvas>
-	<canvas id="{{dynCanvas.idSelector}}" width="{{dynCanvas.width}}" height="{{dynCanvas.height}}"(mousemove)="redraw($event)"></canvas>
+	<canvas id="{{dynCanvas.idSelector}}" width="{{dynCanvas.width}}" height="{{dynCanvas.height}}"(mousemove)="redrawWrapper($event)"></canvas>
 </div>
 
 <ul>

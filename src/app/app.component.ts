@@ -14,8 +14,8 @@ import { DatePoints, Year, Month, Day, Monthes } from './dates';
 export class AppComponent implements OnInit, AfterViewInit {
 
     event: MouseEvent;
-    clientX:number = 0;
-    clientY:number = 0;
+    clientX: number = 0;
+    clientY: number = 0;
 	prevX: number = 0;
 	prevY: number = 0;
 	title = 'Exchange Rates via Canvas';
@@ -24,13 +24,58 @@ export class AppComponent implements OnInit, AfterViewInit {
 	rates: Rate[];
 	dateArray: DatePoints;
 	cacheChart: Object = {};
+	dateStamp: Date;
+	isThrottled: boolean = false; // Дроссель запуска this.redraw
 
     onEvent(event: MouseEvent): void {
+
         this.event = event;
+
     }
+
+	redrawWrapper(event: MouseEvent) { // запускает redraw через дроссель
+
+		this.event = event;
+		let that = this;
+		let savedThis: any;
+
+		function wrapper() {
+
+			if (that.isThrottled) {
+				savedThis = that;
+				return;
+			}
+
+			that.redraw.call(that, that.event);
+
+			that.isThrottled = true;
+
+			setTimeout(function() {
+
+				that.isThrottled = false;
+
+				if (savedThis) {
+
+					wrapper.apply(savedThis);
+					savedThis = null;
+
+				}
+
+			}, 40);
+
+		}
+
+		return wrapper();
+
+	}
 
     redraw(event: MouseEvent): void {
 
+		let nowStamp = new Date();
+		/*if (this.dateStamp != undefined) {
+			console.log(nowStamp - this.dateStamp);
+		}*/
+		this.dateStamp = new Date();
 		//console.time('timeOfRedraw'); // Подтверждение работы кэша
 		let realCanvasWidth: number = this.dynCanvas.width - this.dynCanvas.right - this.dynCanvas.left;
 		let realCanvasHeight: number = this.dynCanvas.height - this.dynCanvas.top - this.dynCanvas.bottom;
@@ -40,16 +85,16 @@ export class AppComponent implements OnInit, AfterViewInit {
 		let axisXpart: number = this.bgrdCanvas.axisXpart;
 		let whichMonth: number = -1;
 		let whichYear: number = -1;
-		let prevValue: number = 0; // Для отслеживания значения X в массиве DatePoints
-		let currentDayIndex: number = 0; // Индекс текщего дня в массиве DatePoints
+		let prevValue: number = 0; 			// Для отслеживания значения X в массиве DatePoints
+		let currentDayIndex: number = 0; 	// Индекс текщего дня в массиве DatePoints
 		let clientX: number = 0;
 		let totalMonthes: number = that.totalMonthes;
 		const CanvasYAxisZero = this.bgrdCanvas.top + realCanvasHeight;
 		const CanvasYAxisMax = this.bgrdCanvas.top;
 		const maxClientCanvasX = this.dynCanvas.left + realCanvasWidth;
 		let cacheChart = this.cacheChart;
-		let partOfMonthes: number = 0; // вспомогательная переменная при поиске диапазона clientX с точночтью до месяца
-		let indexOfPart: number = 0; // вспомогательная переменная, содержит индекс месяца, в который попадает clientX
+		let partOfMonthes: number = 0; 		// вспомогательная переменная при поиске диапазона clientX с точночтью до месяца
+		let indexOfPart: number = 0; 		// вспомогательная переменная, содержит индекс месяца, в который попадает clientX
 
 		this.clientX = Math.round(event.clientX - canvas.getBoundingClientRect().x);
 		this.clientY = Math.round(event.clientY - canvas.getBoundingClientRect().y);
@@ -630,5 +675,5 @@ console.timeEnd('timeOfOnInit');
 		}
 
 	}
-
+	
 }
