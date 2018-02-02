@@ -1,8 +1,8 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ElementRef, ViewChild, Renderer2 } from '@angular/core';
 import { CanvasSettings } from './canvas-settings';
 import { Rate } from './rate';
 import { RateService } from './rates.service';
-import { DatePoints, Year, Month, Day, Monthes } from './dates';
+import { DatePoints, Year, Month, Day, Monthes, ofMonth } from './dates';
 
 @Component({
 	selector: 'app-root',
@@ -12,6 +12,8 @@ import { DatePoints, Year, Month, Day, Monthes } from './dates';
 })
 
 export class AppComponent implements OnInit, AfterViewInit {
+
+	@ViewChild("helper") helper: ElementRef;
 
     event: MouseEvent;
     clientX: number = 0;
@@ -258,14 +260,16 @@ export class AppComponent implements OnInit, AfterViewInit {
 		ctx.stroke();
 
 		ctx.beginPath();  
-		ctx.arc(point.X, point.Y, 5, 0, 2*Math.PI, true);
-		ctx.fillStyle="#f6f7f8";
+		ctx.arc(point.X, point.Y, 5, 0, 2 * Math.PI, true);
+		ctx.fillStyle = "#f6f7f8";
 		ctx.fill();
 		
 		ctx.beginPath();  
-		ctx.arc(point.X, point.Y, 4, 0, 2*Math.PI, true);
-		ctx.fillStyle="#74a3c7";
+		ctx.arc(point.X, point.Y, 4, 0, 2 * Math.PI, true);
+		ctx.fillStyle = "#74a3c7";
 		ctx.fill();
+
+		this.redrawHelper(point, whichYear, whichMonth, currentDayIndex);
 
 		this.prevX = this.clientX;
 		this.prevY = this.clientY;
@@ -273,7 +277,50 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     }
 
-	constructor(private _rateService: RateService){
+	redrawHelper(point: Day, year: number, month: number, day: number):void {
+
+		let helperNode = this.helper.nativeElement;
+		let that: DatePoints = this.dateArray;
+		let diff = helperNode.querySelector(".helper-data__diff");
+
+		helperNode.querySelector(".helper-data__cost").textContent = "$ " + point.cost;
+		helperNode.querySelector(".canv-helper__date").textContent = point.value + " " + ofMonth[that.items[year].items[month].value] + " " + that.items[year].value;
+		helperNode.style.display = "inline-block";
+
+		if (point.diff < 0) {
+			diff.style.color = "#af111c";
+			diff.textContent = "▼" + Math.abs(point.diff);
+		}
+		if (point.diff > 0) {
+			diff.style.color = "#22a053";
+			diff.textContent = "▲" + point.diff;
+		}
+		if (point.diff == 0) {
+			diff.style.color = "#9299a2";
+			diff.textContent = " " + point.diff;
+		}
+
+		this.setHelperPosition(point);
+
+	}
+
+	setHelperPosition(point: Day):void {
+
+		let helperNode = this.helper.nativeElement;
+		let heightString = window.getComputedStyle(helperNode).height;
+		let widthString = window.getComputedStyle(helperNode).width;
+		let width: number = 0;
+		let height: number = 0;
+
+		width = parseFloat(widthString.replace("px", ""));
+		height = parseFloat(heightString.replace("px", ""));
+
+		helperNode.style.top = (point.Y - height - 6) + "px";
+		helperNode.style.left = (point.X + 6) + "px";
+
+	}
+
+	constructor(private _rateService: RateService, private renderer: Renderer2){
 
 	}
 

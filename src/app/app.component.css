@@ -12,5 +12,36 @@
 	z-index:1;
 }
 #iaCanvas {
+	z-index:3;
+}
+.canv-helper {
+	position:absolute;
+	left:0;
+	top:0;
+	background:#fff;
+	border-radius:4px;
+	min-height:50px;
+	min-width:120px;
+	font-size:14px;
+	line-height:20px;
+	box-sizing:border-box;
+	padding:8px 12px;
+	color:#9299a2;
+	font-family:Calibri, sans-serif;
+	box-shadow:0 4px 8px 0 rgba(50, 50, 50, 0.4);
+	display:none;
 	z-index:2;
+}
+.canv-helper__date,
+.canv-helper__data {
+	display:block;
+}
+	.helper-data__cost {
+		color:#3e4757;
+		display:inline-block;
+		min-width:48px;
+	}
+
+footer {
+	min-width:140px;
 }
