@@ -311,12 +311,22 @@ export class AppComponent implements OnInit, AfterViewInit {
 		let widthString = window.getComputedStyle(helperNode).width;
 		let width: number = 0;
 		let height: number = 0;
+		let maxWidth: number = this.dynCanvas.width;
 
 		width = parseFloat(widthString.replace("px", ""));
 		height = parseFloat(heightString.replace("px", ""));
 
 		helperNode.style.top = (point.Y - height - 6) + "px";
-		helperNode.style.left = (point.X + 6) + "px";
+
+		if ((width + point.X + 8) <= maxWidth) {
+
+			helperNode.style.left = (point.X + 6) + "px";
+
+		} else {
+
+			helperNode.style.left = (point.X - 6 - width) + "px";
+
+		}
 
 	}
 
