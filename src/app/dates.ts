@@ -4,12 +4,14 @@ export class Day {
 	Y: number;
 	cost: number;
 	diff: number;
-	constructor(value: number, X: number, Y: number, cost: number, diff: number){
+	asDate: Date;
+	constructor(value: number, X: number, Y: number, cost: number, diff: number, date: Date = new Date()){
 		this.value = value;
 		this.X = X;
 		this.Y = Y;
 		this.cost = cost;
 		this.diff = diff;
+		this.asDate = date;
 	}
 }
 export class Month {

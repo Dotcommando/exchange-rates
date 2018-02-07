@@ -79,24 +79,19 @@ export class AppComponent implements OnInit, AfterViewInit {
 		}*/
 		this.dateStamp = new Date();
 		//console.time('timeOfRedraw'); // Подтверждение работы кэша
+		let that: DatePoints = this.dateArray;
 		let realCanvasWidth: number = this.dynCanvas.width - this.dynCanvas.right - this.dynCanvas.left;
 		let realCanvasHeight: number = this.dynCanvas.height - this.dynCanvas.top - this.dynCanvas.bottom;
 		let canvas: any = document.getElementById(this.dynCanvas.idSelector);
 		let ctx = canvas.getContext("2d");
-		let that: DatePoints = this.dateArray;
-		let axisXpart: number = this.bgrdCanvas.axisXpart;
 		let whichMonth: number = -1;
 		let whichYear: number = -1;
-		let prevValue: number = 0; 			// Для отслеживания значения X в массиве DatePoints
 		let currentDayIndex: number = 0; 	// Индекс текщего дня в массиве DatePoints
 		let clientX: number = 0;
-		let totalMonthes: number = that.totalMonthes;
 		const CanvasYAxisZero = this.bgrdCanvas.top + realCanvasHeight;
 		const CanvasYAxisMax = this.bgrdCanvas.top;
-		const maxClientCanvasX = this.dynCanvas.left + realCanvasWidth;
 		let cacheChart = this.cacheChart;
-		let partOfMonthes: number = 0; 		// вспомогательная переменная при поиске диапазона clientX с точночтью до месяца
-		let indexOfPart: number = 0; 		// вспомогательная переменная, содержит индекс месяца, в который попадает clientX
+		let yearMonth: number[] = [-1, -1]; //Массив с целевым годом и месяцем, потому что метод их передаст в таком формате. Иначе 2 раза рассчитывать придётся одно и то же
 
 		this.clientX = Math.round(event.clientX - canvas.getBoundingClientRect().x);
 		this.clientY = Math.round(event.clientY - canvas.getBoundingClientRect().y);
@@ -116,124 +111,17 @@ export class AppComponent implements OnInit, AfterViewInit {
 
 		else {
 
-			if (clientX > maxClientCanvasX) {
+			yearMonth = this.getYearMonthByX(clientX);
+			whichYear = yearMonth[0];
+			whichMonth = yearMonth[1];
+
+			if (whichYear < 0 || whichMonth < 0) {
 				this.prevX = this.clientX;
 				this.prevY = this.clientY;
-				//console.timeEnd('timeOfRedraw');
-				return;
-			}
-			
-			if (this.prevX == clientX) {
-				this.prevY = this.clientY;
-				//console.timeEnd('timeOfRedraw');
-				return;
-			} // Если курсор смещается по вертикали, оставляем всё как есть
-
-			partOfMonthes += this.dynCanvas.left;
-			for (let i = 0; i < totalMonthes; i++ ) { // считаем, в каком месяце по порядку находится курсор
-
-				partOfMonthes += axisXpart;
-				if (partOfMonthes >= clientX) {
-
-					indexOfPart = i;
-					break;
-
-				}
-
-			}
-
-			if (indexOfPart < that.sumOfMonthes[0]) {
-
-				whichYear = 0;
-				whichMonth = indexOfPart;
-
-			} else {
-
-				whichYear = 1 + (Math.floor((indexOfPart - that.sumOfMonthes[0]) / 12)); // в любом случае, в каждом следующем году после первого по 12 месяцев
-				whichMonth = (indexOfPart - that.sumOfMonthes[0]) % 12;
-
-			}
-
-			//console.log(this.clientX + ":" + this.clientY + "        " + whichYear + " : " + whichMonth + "    realMonth: " + ((this.clientX - this.dynCanvas.left) / axisXpart) % 12);
-
-			if ((whichYear < 0) || (whichMonth < 0) || (clientX < 0)) {
-				this.prevX = this.clientX;
-				this.prevY = this.clientY;
-				//console.timeEnd('timeOfRedraw');
-				return;
-			}
-			if (that.sumOfDaysInMonthes[whichYear] == undefined) {
-				this.prevX = this.clientX;
-				this.prevY = this.clientY;
-				//console.timeEnd('timeOfRedraw');
-				return;
-			}
-			if (that.sumOfDaysInMonthes[whichYear][whichMonth] == undefined) {
-				this.prevX = this.clientX;
-				this.prevY = this.clientY;
-				//console.timeEnd('timeOfRedraw');
 				return;
 			}
 
-			let sumOfDaysInMonth = that.sumOfDaysInMonthes[whichYear][whichMonth];
-
-			if (sumOfDaysInMonth == undefined) {
-				this.prevX = this.clientX;
-				this.prevY = this.clientY;
-				//console.timeEnd('timeOfRedraw');
-				return;
-			}
-
-			let monthRange: Month = that.items[whichYear].items[whichMonth];
-			prevValue = -1; // заведомо даём несуществующее значение
-
-			for (let k = 0; k < sumOfDaysInMonth; k++ ) {
-
-				// если точка оказалась зажата между месяцами справа
-				if ((k == sumOfDaysInMonth - 1) && (clientX > monthRange.items[k].X)) {
-
-					monthRange = that.items[whichYear].items[whichMonth];
-					currentDayIndex = k;
-					//console.log("X:          whichMonth = " + whichMonth + "    currentDay = " + that.items[whichYear].items[whichMonth].items[currentDayIndex].value);
-					break;
-
-				}
-
-				// если это первая итерация и точка между месяцами слева
-				if ((prevValue < 0) && (monthRange.items[k].X >= clientX)) {
-					currentDayIndex = k;
-					//console.log("X:          whichMonth = " + whichMonth + "    currentDay = " + that.items[whichYear].items[whichMonth].items[currentDayIndex].value);
-					break;
-				}
-
-				// итерация первая, но не попали
-				if (prevValue < 0) {
-					prevValue = k;
-					continue;
-				}
-
-				// точка оказалась между предыдущим и текущим значениями
-				if ((monthRange.items[k].X >= clientX) && (monthRange.items[prevValue].X < clientX)) {
-					if ((monthRange.items[k].X - clientX) > (clientX - monthRange.items[prevValue].X)) {
-						currentDayIndex = prevValue;
-						//console.log("prevValue:  whichMonth = " + whichMonth + "    currentDay = " + that.items[whichYear].items[whichMonth].items[currentDayIndex].X);
-						break;
-					} else {
-						
-						currentDayIndex = k;
-						//console.log("X:          whichMonth = " + whichMonth + "    currentDay = " + that.items[whichYear].items[whichMonth].items[currentDayIndex].X);
-						break;
-					}
-				}
-
-				// точка оказалась сильно позади, т.е. и предыдущее и текущее значения больше остатка
-				if ((monthRange.items[prevValue].X >= clientX) && (monthRange.items[k].X > clientX)) {
-					currentDayIndex = prevValue;
-					//console.log("X:          whichMonth = " + whichMonth + "    currentDay = " + that.items[whichYear].items[whichMonth].items[currentDayIndex].X);
-					break;
-				}
-
-			}
+			currentDayIndex = this.getDayByX(whichYear, whichMonth, clientX);
 
 			cacheChart[clientX] = {};
 			cacheChart[clientX].year = whichYear;
@@ -276,6 +164,115 @@ export class AppComponent implements OnInit, AfterViewInit {
 		//console.timeEnd('timeOfRedraw');
 
     }
+
+	getYearMonthByX(clientX: number): number[] {
+
+		let realCanvasWidth: number = this.dynCanvas.width - this.dynCanvas.right - this.dynCanvas.left;
+		const maxClientCanvasX = this.dynCanvas.left + realCanvasWidth;
+		let that: DatePoints = this.dateArray;
+		let totalMonthes: number = that.totalMonthes;
+		let axisXpart: number = this.bgrdCanvas.axisXpart;
+		let partOfMonthes: number = 0; 		// вспомогательная переменная при поиске диапазона clientX с точночтью до месяца
+		let indexOfPart: number = 0; 		// вспомогательная переменная, содержит индекс месяца, в который попадает clientX
+		let whichYear: number;
+		let whichMonth: number;
+
+		if (clientX > maxClientCanvasX) { // курсор ещё в Canvasе, но уже за рамками графика
+			return [-1, -1];
+		}
+
+		if (this.prevX == clientX) { // Если курсор смещается по вертикали, оставляем всё как есть
+			return [-1, -1];
+		}
+
+		partOfMonthes += this.dynCanvas.left;
+		for (let i = 0; i < totalMonthes; i++ ) { // считаем, в каком месяце по порядку находится курсор
+
+			partOfMonthes += axisXpart;
+			if (partOfMonthes >= clientX) {
+				indexOfPart = i;
+				break;
+			}
+
+		}
+
+		if (indexOfPart < that.sumOfMonthes[0]) {
+			whichYear = 0;
+			whichMonth = indexOfPart;
+		} else {
+			whichYear = 1 + (Math.floor((indexOfPart - that.sumOfMonthes[0]) / 12)); // в любом случае, в каждом следующем году после первого по 12 месяцев
+			whichMonth = (indexOfPart - that.sumOfMonthes[0]) % 12;
+		}
+
+		if ((whichYear < 0) || (whichMonth < 0) || (clientX < 0)) {
+			return [-1, -1];
+		}
+		if (that.sumOfDaysInMonthes[whichYear] == undefined) {
+			return [-1, -1];
+		}
+		if (that.sumOfDaysInMonthes[whichYear][whichMonth] == undefined) {
+			return [-1, -1];
+		}
+
+		return [whichYear, whichMonth];
+
+	}
+
+	getDayByX(whichYear: number, whichMonth: number, clientX: number): number {
+
+		let that: DatePoints = this.dateArray;
+		let monthRange: Month = that.items[whichYear].items[whichMonth];
+		let currentDayIndex: number;
+		let prevValue: number = 0; // Для отслеживания предыдущего значения X в перечислении массива DatePoints
+		let sumOfDaysInMonth: number = that.sumOfDaysInMonthes[whichYear][whichMonth]; // Число дней в месяце, в который входит день
+
+		if (sumOfDaysInMonth == undefined) return -1;
+
+		prevValue = -1; // заведомо даём несуществующее значение
+
+		for (let k = 0; k < sumOfDaysInMonth; k++ ) {
+
+			// если точка оказалась зажата между месяцами справа
+			if ((k == sumOfDaysInMonth - 1) && (clientX > monthRange.items[k].X)) {
+				monthRange = that.items[whichYear].items[whichMonth];
+				currentDayIndex = k;
+				break;
+			}
+
+			// если это первая итерация и точка между месяцами слева
+			if ((prevValue < 0) && (monthRange.items[k].X >= clientX)) {
+				currentDayIndex = k;
+				break;
+			}
+
+			// итерация первая, но не попали
+			if (prevValue < 0) {
+				prevValue = k;
+				continue;
+			}
+
+			// точка оказалась между предыдущим и текущим значениями
+			if ((monthRange.items[k].X >= clientX) && (monthRange.items[prevValue].X < clientX)) {
+				if ((monthRange.items[k].X - clientX) > (clientX - monthRange.items[prevValue].X)) {
+					currentDayIndex = prevValue;
+					break;
+				} else {
+					currentDayIndex = k;
+					break;
+				}
+			}
+
+			// точка оказалась сильно позади, т.е. и предыдущее и текущее значения больше остатка
+			if ((monthRange.items[prevValue].X >= clientX) && (monthRange.items[k].X > clientX)) {
+				currentDayIndex = prevValue;
+				break;
+			}
+
+		}
+
+		return currentDayIndex;
+
+	}
 
 	redrawHelper(point: Day, year: number, month: number, day: number):void {
 
@@ -425,7 +422,14 @@ console.timeEnd('timeOfOnInit');
 			if (pointsObj.cacheMonth[year] == undefined) pointsObj.cacheMonth[year] = [];
 			pointsObj.cacheMonth[year][month] = monthKey;
 
-			pointsObj.items[yearKey].items[monthKey].items.push({value: day, X: null, Y: null, cost: (Math.round(dataSource[i].value * 100) / 100 ), diff:null});
+			pointsObj.items[yearKey].items[monthKey].items.push({
+				value: day,
+				X: null,
+				Y: null,
+				cost: (Math.round(dataSource[i].value * 100) / 100 ),
+				diff: null,
+				asDate: new Date(year, month, day)
+			});
 
 			dayKey = pointsObj.isDay(year, month, day)[2];
 			if (pointsObj.cacheDay[year] == undefined) pointsObj.cacheDay[year] = [];
@@ -472,7 +476,7 @@ console.timeEnd('timeOfOnInit');
 		let yearLen: number = that.items.length - 1;
 		let monthLen: number = 0;
 		let dayLen: number = 0;
-		let currentEl: Day = {value: null, X: null, Y: null, cost: null, diff: null};
+		let currentEl: Day = {value: null, X: null, Y: null, cost: null, diff: null, asDate: null};
 		let prevEl: Day = undefined;
 		let prevDayLen: number;
 		let prevMonthLen: number;
