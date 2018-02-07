@@ -10,10 +10,10 @@
 	<canvas id="{{bgrdCanvas.idSelector}}" width="{{bgrdCanvas.width}}" height="{{bgrdCanvas.height}}"></canvas>
 	<canvas id="{{dynCanvas.idSelector}}" width="{{dynCanvas.width}}" height="{{dynCanvas.height}}" (mousemove)="redrawWrapper($event)"></canvas>
 	<div class="canv-helper" #helper>
-		<span class="canv-helper__date"></span>
+		<span class="canv-helper__date">{{tooltip.date}}</span>
 		<span class="canv-helper__data helper-data">
-			<span class="helper-data__cost"></span>
-			<span class="helper-data__diff"></span>
+			<span class="helper-data__cost">{{tooltip.cost}}</span>
+			<span class="helper-data__diff" [style.color]="tooltip.diffColor">{{tooltip.diff}}</span>
 		</span>
 	</div>
 </div>

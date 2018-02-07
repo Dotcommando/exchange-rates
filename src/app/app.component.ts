@@ -28,6 +28,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 	cacheChart: Object = {};
 	dateStamp: Date;
 	isThrottled: boolean = false; // Дроссель запуска this.redraw
+	tooltip: {date: string, cost: string, diff: string, diffColor: string};
 
     onEvent(event: MouseEvent): void {
 
@@ -49,7 +50,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 			}
 
 			that.redraw.call(that, that.event);
-
 			that.isThrottled = true;
 
 			setTimeout(function() {
@@ -57,10 +57,8 @@ export class AppComponent implements OnInit, AfterViewInit {
 				that.isThrottled = false;
 
 				if (savedThis) {
-
 					wrapper.apply(savedThis);
 					savedThis = null;
-
 				}
 
 			}, 40);
@@ -278,23 +276,31 @@ export class AppComponent implements OnInit, AfterViewInit {
 
 		let helperNode = this.helper.nativeElement;
 		let that: DatePoints = this.dateArray;
-		let diff = helperNode.querySelector(".helper-data__diff");
+		//let diff = helperNode.querySelector(".helper-data__diff");
 
-		helperNode.querySelector(".helper-data__cost").textContent = "$ " + point.cost;
-		helperNode.querySelector(".canv-helper__date").textContent = point.value + " " + ofMonth[that.items[year].items[month].value] + " " + that.items[year].value;
+		//helperNode.querySelector(".helper-data__cost").textContent = "$ " + point.cost;
+		this.tooltip.cost = "$ " + point.cost;
+		//helperNode.querySelector(".canv-helper__date").textContent = point.value + " " + ofMonth[that.items[year].items[month].value] + " " + that.items[year].value;
+		this.tooltip.date = point.value + " " + ofMonth[that.items[year].items[month].value] + " " + that.items[year].value;
 		helperNode.style.display = "inline-block";
 
 		if (point.diff < 0) {
-			diff.style.color = "#af111c";
-			diff.textContent = "▼" + Math.abs(point.diff);
+			this.tooltip.diff = "▼" + Math.abs(point.diff);
+			this.tooltip.diffColor = "#af111c";
+			//diff.style.color = "#af111c";
+			//diff.textContent = "▼" + Math.abs(point.diff);
 		}
 		if (point.diff > 0) {
-			diff.style.color = "#22a053";
-			diff.textContent = "▲" + point.diff;
+			this.tooltip.diff = "▲" + point.diff;
+			this.tooltip.diffColor = "#22a053";
+			//diff.style.color = "#22a053";
+			//diff.textContent = "▲" + point.diff;
 		}
 		if (point.diff == 0) {
-			diff.style.color = "#9299a2";
-			diff.textContent = " " + point.diff;
+			this.tooltip.diff = " " + point.diff;
+			this.tooltip.diffColor = "#9299a2";
+			//diff.style.color = "#9299a2";
+			//diff.textContent = " " + point.diff;
 		}
 
 		this.setHelperPosition(point);
@@ -340,12 +346,13 @@ console.time('timeOfOnInit');
 		this.setDiffs();		// высчитываем diffы между каждой парой точек в this.dateArray
 		this.setAxisExtremums();// устанавливаем максимум и минимум для оси Y
 		this.calculateCoords();	// просчитываем координаты для каждой точки
+		this.initTooltip();		// создаём объект подсказки в компоненте и проставляем пустые строки в свойства
 console.timeEnd('timeOfOnInit');
 
 }
 	ngAfterViewInit() {
 
-		this.drawBGRD();
+		this.drawAxisesAndCurve();	// один раз отрисовываем оси, линии третей и сам график
 
 	}
 	getRates():void {
@@ -439,21 +446,7 @@ console.timeEnd('timeOfOnInit');
 		}
 
 		this.dateArray = pointsObj;
-		//console.log((7.364+6.011+7.903+6.979+7.708+7.090+8.662+7.349+8.911+7.965)/10);
-		//console.log((5.307+5.798+6.188+5.731+5.340+5.505+6.688+6.029+6.143+11.711)/10);
-/*
-		console.log("cacheYear == ");
-		console.log(pointsObj.cacheYear);
-		console.log("==-----------------------------==");
-		console.log(" ");
-		console.log("cacheMonth == ");
-		console.log(pointsObj.cacheMonth);
-		console.log("==-----------------------------==");
-		console.log(" ");
-		console.log("cacheDay == ");
-		console.log(pointsObj.cacheDay);
-		console.log("==-----------------------------==");
-*/
+
 	}
 	organizeArray():void {
 
@@ -524,9 +517,6 @@ console.timeEnd('timeOfOnInit');
 			}
 
 		}
-
-		//console.log(that.min);
-		//console.log(that.max);
 
 	}
 	calculateCoords():void {
@@ -603,6 +593,16 @@ console.timeEnd('timeOfOnInit');
 		}
 
 	}
+	initTooltip():void {
+
+		this.tooltip = {
+			date: "",
+			cost: "",
+			diff: "",
+			diffColor: ""
+		};
+
+	}
 	setAxisExtremums():void {
 
 		let that: DatePoints = this.dateArray;
@@ -616,7 +616,7 @@ console.timeEnd('timeOfOnInit');
 		//console.log(this.bgrdCanvas.minY + "    " + this.bgrdCanvas.maxY);
 
 	}
-	drawBGRD():void {
+	drawAxisesAndCurve():void {
 
 		let canvas: any = document.getElementById(this.bgrdCanvas.idSelector);
 		let ctx = canvas.getContext("2d");
@@ -706,6 +706,7 @@ console.timeEnd('timeOfOnInit');
 			ctx.textAlign = "left";
 			ctx.fillText(that.items[i].value + " →", that.items[i].items[0].items[0].X + 12, CanvasYAxisZero + 28);
 
+			// рисуем график на статичном необновляемом слое
 			for (let j = 0; j < monthLen; j++) {
 
 				dayLen = that.items[i].items[j].items.length;
@@ -725,9 +726,6 @@ console.timeEnd('timeOfOnInit');
 					ctx.stroke();
 					prevX = that.items[i].items[j].items[k].X;
 					prevY = that.items[i].items[j].items[k].Y;
-					//if (i == 1) {
-					//	console.log(that.items[i].items[j].items[k].X + ":" + that.items[i].items[j].items[k].Y);
-					//}
 
 				}
 
