@@ -42,7 +42,11 @@
   display:inline-block;
   min-width:48px;
 }
-
+.link-to-repo {
+  margin:12px auto;
+  text-align:center;
+  padding:0 20px;
+}
 footer {
   min-width:140px;
 }
