@@ -13,7 +13,7 @@ export class RateService {
 	}
 }*/
 export class RateService {
-	getRates(): Observable<Rate[]> {
-		return of(RATES);
-	}
+  getRates(): Observable<Rate[]> {
+    return of(RATES);
+  }
 }

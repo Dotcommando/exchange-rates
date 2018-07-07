@@ -1,4 +1,4 @@
 export class Rate {
-	date: string;
-	value: number;
+  date: string;
+  value: number;
 }
